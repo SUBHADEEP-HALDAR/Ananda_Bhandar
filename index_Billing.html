@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ananda Bhandar — Billing</title>
+<style>
+  :root{
+    --ink:#242021;
+    --paper:#fffdf9;
+    --line:#e3dcc8;
+    --accent:#e2711d;
+    --accent-dark:#c85a0a;
+    --teal:#1c8c7c;
+    --teal-dark:#136e60;
+    --purple:#7d4fb0;
+    --purple-dark:#623b8c;
+    --danger:#d94f4f;
+    --warn:#e0a63c;
+    --ok:#1c8c7c;
+    --muted:#8a7f6b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    background:linear-gradient(160deg,#fff4e6 0%,#eefaf6 45%,#f3edfb 100%);
+    color:var(--ink);
+    padding:24px;
+  }
+  .wrap{ max-width:900px; margin:0 auto; }
+  h1{
+    font-size:24px; margin:0 0 4px; letter-spacing:0.2px;
+    background:linear-gradient(90deg,var(--accent-dark),var(--teal-dark),var(--purple-dark));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    display:inline-block; font-weight:800;
+  }
+  .sub{ color:var(--muted); font-size:13px; margin-bottom:18px; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tab-btn{
+    background:#fff; border:2px solid var(--line); color:var(--muted);
+    padding:9px 18px; border-radius:20px; cursor:pointer; font-size:13px; font-weight:600;
+    transition:all .15s ease;
+  }
+  .tab-btn:hover{ border-color:var(--accent); color:var(--accent-dark); }
+  .tab-btn.active{ background:var(--accent-dark); border-color:var(--accent-dark); color:#fff; box-shadow:0 3px 10px rgba(200,90,10,0.3); }
+  .tab-btn[data-tab="productsTab"].active{ background:var(--teal-dark); border-color:var(--teal-dark); box-shadow:0 3px 10px rgba(19,110,96,0.3); }
+  .tab-btn[data-tab="historyTab"].active{ background:var(--purple-dark); border-color:var(--purple-dark); box-shadow:0 3px 10px rgba(98,59,140,0.3); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  .card{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:16px;
+    box-shadow:0 2px 10px rgba(60,40,10,0.06); border-top:4px solid var(--accent); }
+  #productsTab .card{ border-top-color:var(--teal); }
+  #historyTab .card{ border-top-color:var(--purple); }
+  .card h2{ font-size:14px; margin:0 0 12px; color:var(--accent-dark); font-weight:700; }
+  #productsTab .card h2{ color:var(--teal-dark); }
+  #historyTab .card h2{ color:var(--purple-dark); }
+
+  .row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; align-items:flex-end; }
+  .field{ flex:1; min-width:140px; }
+  .field label{ display:block; font-size:11px; color:var(--muted); margin-bottom:4px; }
+  .field input, .field select{
+    width:100%; padding:7px 8px; border:1px solid var(--line); border-radius:4px; font-size:14px; background:#fff;
+  }
+
+  table{ width:100%; border-collapse:collapse; margin-bottom:10px; }
+  th{ text-align:left; font-size:11px; color:var(--muted); padding:5px 6px; border-bottom:1px solid var(--line); }
+  td{ padding:5px 6px; border-bottom:1px solid #e4e0d3; font-size:13px; }
+  td input, td select{ width:100%; border:none; background:transparent; padding:5px 4px; font-size:14px; }
+  td input:focus, td select:focus{ outline:1px solid var(--accent); border-radius:3px; }
+  .qty,.unit,.rate,.amt{width:70px;}
+  .del-btn{ background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; line-height:1; padding:2px 6px; }
+  .add-row{
+    background:none; border:1px dashed var(--line); color:var(--accent-dark);
+    padding:7px 10px; border-radius:4px; cursor:pointer; font-size:13px;
+  }
+
+  .totals{ margin-top:14px; border-top:1px solid var(--line); padding-top:12px; }
+  .totals .line{ display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-bottom:8px; font-size:14px; }
+  .totals .line span:first-child{ color:var(--muted); font-size:13px; }
+  .totals input{ width:110px; text-align:right; padding:6px 8px; border:1px solid var(--line); border-radius:4px; font-size:14px; }
+  .totals .grand{ font-size:17px; font-weight:700; color:var(--accent-dark); }
+  .grand-amt{ width:110px; text-align:right; color:var(--accent-dark); font-weight:700; border-color:var(--accent) !important; }
+
+  .pay-options{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+  .pay-opt{
+    border:2px solid var(--line); border-radius:20px; padding:8px 16px; cursor:pointer;
+    font-size:13px; font-weight:600; background:#fff; color:var(--muted); user-select:none; transition:all .15s ease;
+  }
+  .pay-opt[data-val="Cash"].selected{ background:var(--teal); border-color:var(--teal); color:#fff; }
+  .pay-opt[data-val="GPay"].selected{ background:#3b6fd6; border-color:#3b6fd6; color:#fff; }
+  .pay-opt[data-val="Credit"].selected{ background:var(--warn); border-color:var(--warn); color:#fff; }
+
+  .actions{ display:flex; gap:10px; margin-top:14px; }
+  button.main{ background:linear-gradient(90deg,var(--accent-dark),var(--accent)); color:#fff; border:none; padding:11px 20px; border-radius:22px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 3px 10px rgba(200,90,10,0.25); }
+  button.secondary{ background:#fff; border:2px solid var(--line); color:var(--ink); padding:10px 18px; border-radius:22px; font-size:14px; font-weight:600; cursor:pointer; }
+  button.secondary:hover{ border-color:var(--accent); color:var(--accent-dark); }
+  button.tiny{ background:#fff; border:2px solid var(--line); color:var(--ink); padding:5px 10px; border-radius:14px; font-size:12px; cursor:pointer; font-weight:600; }
+  button.tiny.pay-btn{ border-color:var(--ok); color:var(--teal-dark); }
+  button.tiny.pay-btn:hover{ background:var(--teal); color:#fff; border-color:var(--teal); }
+
+  .settings-toggle{ font-size:12px; color:var(--accent-dark); cursor:pointer; text-decoration:underline; margin-bottom:14px; display:inline-block; font-weight:600; }
+  #settingsCard{ display:none; }
+
+  .summary-bar{
+    display:flex; gap:20px; flex-wrap:wrap; margin-bottom:14px; padding:14px 18px;
+    background:linear-gradient(90deg,#f3edfb,#eefaf6); border:1px solid var(--line); border-radius:10px; font-size:13px;
+    box-shadow:0 2px 10px rgba(60,40,10,0.06);
+  }
+  .summary-bar b{ color:var(--purple-dark); font-size:16px; }
+  .tag{ display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700; }
+  .tag.due{ background:#fbe4e4; color:var(--danger); }
+  .tag.paid{ background:#dcf3ee; color:var(--teal-dark); }
+  .tag.low{ background:#fdf1d6; color:#9a6b00; }
+  .tag.ok{ background:#dcf3ee; color:var(--teal-dark); }
+  .stock-hint{ font-size:11px; margin-top:2px; color:var(--muted); min-height:0; }
+  .stock-hint.warn{ color:var(--danger); font-weight:700; }
+  .stock-hint.low{ color:#9a6b00; font-weight:600; }
+  .low-limit{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); margin-bottom:10px; }
+  .low-limit input{ width:70px; padding:5px 8px; border:1px solid var(--line); border-radius:4px; font-size:13px; }
+
+  .backup-row{ display:flex; gap:10px; margin-bottom:14px; }
+
+  #printArea{ display:none; }
+
+  .calc-fab{
+    position:fixed; bottom:22px; right:22px; z-index:500;
+    width:54px; height:54px; border-radius:50%; border:none;
+    background:linear-gradient(135deg,var(--purple),var(--purple-dark));
+    color:#fff; font-size:24px; cursor:pointer;
+    box-shadow:0 4px 14px rgba(98,59,140,0.4);
+  }
+  .calc-fab:hover{ filter:brightness(1.08); }
+  .calc-overlay{
+    display:none; position:fixed; inset:0; background:rgba(30,20,10,0.4);
+    z-index:600; align-items:center; justify-content:center;
+  }
+  .calc-overlay.open{ display:flex; }
+  .calc-box{
+    background:var(--paper); border-radius:14px; padding:16px; width:260px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.28); border-top:4px solid var(--purple);
+  }
+  .calc-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-weight:700; color:var(--purple-dark); font-size:14px; }
+  .calc-close{ background:none; border:none; font-size:16px; cursor:pointer; color:var(--muted); }
+  .calc-display{
+    width:100%; text-align:right; font-size:24px; padding:10px 12px; margin-bottom:10px;
+    border:1px solid var(--line); border-radius:8px; background:#fff; box-sizing:border-box;
+  }
+  .calc-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .calc-grid button{
+    padding:12px 0; border-radius:8px; border:1px solid var(--line); background:#fff;
+    font-size:16px; cursor:pointer; font-weight:600; color:var(--ink);
+  }
+  .calc-grid button:hover{ background:#f3edfb; border-color:var(--purple); }
+  .calc-zero{ grid-column:span 2; }
+  .calc-eq{ background:var(--purple) !important; color:#fff !important; border-color:var(--purple) !important; }
+  .calc-hint{ font-size:10px; color:var(--muted); margin-top:10px; text-align:center; }
+
+  @media print{
+    body{ background:#fff; padding:0; margin:0; }
+    .wrap > *:not(#printArea){ display:none !important; }
+    .calc-fab, .calc-overlay{ display:none !important; }
+    #printArea{ display:block; width:72mm; padding:5mm 5mm; font-family:'Courier New', monospace; color:#000; }
+    @page{ size:A4; margin:0; }
+    .pb-shop{ text-align:center; font-weight:700; font-size:13px; letter-spacing:0.5px; }
+    .pb-meta{ text-align:center; font-size:9px; margin-bottom:3px; }
+    .pb-rule{ border-top:1px dashed #000; margin:3px 0; }
+    .pb-info{ display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px; }
+    table.pb-items{ width:100%; border-collapse:collapse; font-size:10px; margin:3px 0; }
+    table.pb-items th{ text-align:left; border-bottom:1px solid #000; padding:1px 2px; font-weight:700;}
+    table.pb-items td{ padding:1px 2px; }
+    table.pb-items .r{ text-align:right; }
+    .pb-totals{ margin-top:3px; font-size:10px; }
+    .pb-totals .l{ display:flex; justify-content:space-between; }
+    .pb-totals .grand{ font-weight:700; font-size:12px; border-top:1px solid #000; margin-top:2px; padding-top:2px; }
+    .pb-footer{ text-align:center; font-size:10px; margin-top:8px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="calcFab" class="calc-fab" onclick="openCalc()" title="Calculator (press F2 anytime)">🧮</button>
+<div id="calcOverlay" class="calc-overlay" onclick="if(event.target===this) closeCalc()">
+  <div class="calc-box">
+    <div class="calc-header">
+      <span>🧮 Calculator</span>
+      <button class="calc-close" onclick="closeCalc()">✕</button>
+    </div>
+    <input id="calcDisplay" class="calc-display" type="text" readonly value="0">
+    <div class="calc-grid">
+      <button onclick="calcClear()">C</button>
+      <button onclick="calcBackspace()">⌫</button>
+      <button onclick="calcPercent()">%</button>
+      <button onclick="calcOp('/')">÷</button>
+
+      <button onclick="calcNum('7')">7</button>
+      <button onclick="calcNum('8')">8</button>
+      <button onclick="calcNum('9')">9</button>
+      <button onclick="calcOp('*')">×</button>
+
+      <button onclick="calcNum('4')">4</button>
+      <button onclick="calcNum('5')">5</button>
+      <button onclick="calcNum('6')">6</button>
+      <button onclick="calcOp('-')">−</button>
+
+      <button onclick="calcNum('1')">1</button>
+      <button onclick="calcNum('2')">2</button>
+      <button onclick="calcNum('3')">3</button>
+      <button onclick="calcOp('+')">+</button>
+
+      <button onclick="calcNum('0')" class="calc-zero">0</button>
+      <button onclick="calcNum('.')">.</button>
+      <button class="calc-eq" onclick="calcEquals()">=</button>
+    </div>
+    <div class="calc-hint">Keyboard: type numbers, + − × ÷ (or */), Enter for =, Backspace, Esc to close. Press F2 anywhere to open.</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <h1>Ananda Bhandar — Billing</h1>
+  <div class="sub">Everything is saved only on this computer's browser. Use Export regularly to back up.</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="billTab" onclick="showTab('billTab')">🧾 New Bill</button>
+    <button class="tab-btn" data-tab="productsTab" onclick="showTab('productsTab')">📦 Products</button>
+    <button class="tab-btn" data-tab="historyTab" onclick="showTab('historyTab')">📒 Bill History</button>
+  </div>
+
+  <!-- ================= NEW BILL TAB ================= -->
+  <div class="tab-panel active" id="billTab">
+
+    <span class="settings-toggle" onclick="toggleSettings()">Edit shop details (name / GSTIN / phone)</span>
+    <div class="card" id="settingsCard">
+      <h2>Shop details</h2>
+      <div class="row">
+        <div class="field"><label>Shop name</label><input id="setShop" value="ANANDA BHANDER"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>GSTIN</label><input id="setGstin" placeholder="Enter your GSTIN"></div>
+        <div class="field"><label>Phone</label><input id="setPhone" placeholder="Enter phone number"></div>
+      </div>
+      <button class="secondary" onclick="saveSettings()">Save details</button>
+    </div>
+
+    <div class="card">
+      <h2>Bill</h2>
+      <div class="row">
+        <div class="field"><label>Bill No.</label><input id="billNo" type="text"></div>
+        <div class="field"><label>Date</label><input id="billDate" type="date"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Customer name</label><input id="custName" type="text" placeholder="Optional"></div>
+        <div class="field"><label>Customer address</label><input id="custAddress" type="text" placeholder="Optional"></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th style="width:32%">Item</th><th class="qty">Qty</th><th class="unit">Unit</th><th class="rate">Rate</th><th class="amt">Amount</th><th></th></tr>
+        </thead>
+        <tbody id="itemRows"></tbody>
+      </table>
+      <button class="add-row" onclick="addRow()">+ Add item</button>
+      <datalist id="productDatalist"></datalist>
+
+      <div class="totals">
+        <div class="line"><span>Subtotal</span><input id="subtotal" readonly value="0.00"></div>
+        <div class="line"><span>GST</span><input id="gst" type="number" step="0.01" value="0" oninput="calcTotals()"></div>
+        <div class="line grand"><span>Total</span><input class="grand-amt" id="total" readonly value="0.00"></div>
+      </div>
+
+      <div>
+        <label style="display:block; font-size:11px; color:var(--muted); margin-bottom:4px;">Payment</label>
+        <div class="pay-options" id="payOptions">
+          <div class="pay-opt selected" data-val="Cash" onclick="selectPay('Cash')">Cash</div>
+          <div class="pay-opt" data-val="GPay" onclick="selectPay('GPay')">GPay</div>
+          <div class="pay-opt" data-val="Credit" onclick="selectPay('Credit')">Credit (pay later)</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="main" onclick="printBill()">Print bill</button>
+        <button class="secondary" onclick="newBill()">New bill (next customer)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PRODUCTS TAB ================= -->
+  <div class="tab-panel" id="productsTab">
+    <div class="card">
+      <h2>Add products by company</h2>
+      <div class="row">
+        <div class="field"><label>Company name</label><input id="batchCompany" type="text" placeholder="e.g. XYZ Company"></div>
+        <div class="field"><label>Company GSTIN</label><input id="batchCompanyGstin" type="text" placeholder="e.g. 22AAAAA0000A1Z5"></div>
+      </div>
+      <table>
+        <thead><tr><th style="width:28%">Product name</th><th class="unit">Unit</th><th class="rate">Rate</th><th class="rate">Stock</th><th></th></tr></thead>
+        <tbody id="batchRows"></tbody>
+      </table>
+      <button class="add-row" onclick="addBatchRow()">+ Add another item</button>
+      <div class="actions">
+        <button class="main" onclick="saveBatch()">Save all to this company</button>
+      </div>
+      <div class="sub" style="margin-top:8px;">Type the company once, add as many products as you bought from them, then hit Save. Rows clear after saving so you can start the next company.</div>
+    </div>
+    <div class="card">
+      <h2>Saved products</h2>
+      <div class="low-limit">Show "Low" when stock is at or below <input id="lowLimit" type="number" min="0" step="1" onchange="saveLowLimit()"> (leave a product's Stock blank if you don't want to track it)</div>
+      <div class="row" style="margin-bottom:6px;">
+        <div class="field"><label>🔎 Search by product name</label><input id="prodSearchName" type="text" oninput="renderProducts()" placeholder="Type product name..."></div>
+        <div class="field"><label>🔎 Search by company</label><input id="prodSearchCompany" type="text" oninput="renderProducts()" placeholder="Type company name..."></div>
+      </div>
+      <div class="row" style="margin-bottom:10px; align-items:flex-end;">
+        <div class="field" style="max-width:220px;">
+          <label>Stock status</label>
+          <select id="prodStockFilter" onchange="renderProducts()">
+            <option value="all">All products</option>
+            <option value="low">Low stock only</option>
+            <option value="out">Out of stock only</option>
+            <option value="ok">In stock (not low) only</option>
+          </select>
+        </div>
+        <button class="secondary" style="margin-left:auto;" onclick="clearProductSearch()">Clear search</button>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Company</th><th>Company GSTIN</th><th>Unit</th><th>Rate</th><th>Stock</th><th></th><th></th></tr></thead>
+        <tbody id="productRows"></tbody>
+      </table>
+      <div class="sub" id="noProducts" style="display:none;">No products saved yet.</div>
+      <div class="sub" id="noProductMatch" style="display:none;">No saved products match this search.</div>
+    </div>
+  </div>
+
+  <!-- ================= HISTORY TAB ================= -->
+  <div class="tab-panel" id="historyTab">
+    <div class="summary-bar">
+      <div>Total bills: <b id="sumCount">0</b></div>
+      <div>Total sales: <b id="sumSales">₹0.00</b></div>
+      <div>Outstanding credit: <b id="sumDue" style="color:var(--danger);">₹0.00</b></div>
+    </div>
+    <div class="backup-row">
+      <button class="secondary" onclick="exportData()">⬇ Export backup (JSON)</button>
+      <button class="secondary" onclick="document.getElementById('importFile').click()">⬆ Import backup</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="secondary" onclick="printReport()">🖨 Printable report (who/what/when/amount/payment)</button>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="field"><label>Search by customer name</label><input id="histSearch" type="text" oninput="renderHistory()" placeholder="Type a name..."></div>
+        <div class="field"><label>From date</label><input id="histFrom" type="date" oninput="renderHistory()"></div>
+        <div class="field"><label>To date</label><input id="histTo" type="date" oninput="renderHistory()"></div>
+        <div class="field" style="flex:0;"><button class="secondary" onclick="clearHistFilters()">Clear filters</button></div>
+      </div>
+      <div class="sub" id="histFilterSummary" style="margin-bottom:8px;"></div>
+      <table>
+        <thead><tr><th>Bill No</th><th>Date</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead>
+        <tbody id="historyRows"></tbody>
+      </table>
+      <div class="sub" id="noHistory" style="display:none;">No bills printed yet.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PRINT LAYOUT -->
+<div id="printArea">
+  <div class="pb-shop" id="pbShop">ANANDA BHANDER</div>
+  <div class="pb-meta" id="pbMeta">GSTIN: | Ph:</div>
+  <div class="pb-rule"></div>
+  <div class="pb-info">
+    <span id="pbBillNo">Bill No: </span>
+    <span id="pbDate">Date: </span>
+  </div>
+  <div class="pb-info" id="pbCustRow">
+    <span id="pbCustName"></span>
+    <span id="pbCustAddress"></span>
+  </div>
+  <table class="pb-items">
+    <thead><tr><th>Item</th><th class="r">Qty</th><th class="r">Unit</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead>
+    <tbody id="pbItems"></tbody>
+  </table>
+  <div class="pb-rule"></div>
+  <div class="pb-totals">
+    <div class="l"><span>Subtotal</span><span id="pbSubtotal">0.00</span></div>
+    <div class="l"><span>GST</span><span id="pbGst">0.00</span></div>
+    <div class="l grand"><span>TOTAL</span><span id="pbTotal">0.00</span></div>
+    <div class="l" id="pbPayLine"><span>Payment</span><span id="pbPay">Cash</span></div>
+  </div>
+  <div class="pb-footer">Thank You! Visit Again</div>
+</div>
+
+<script>
+  const LS_SETTINGS = 'ab_settings';
+  const LS_BILLNO = 'ab_next_billno';
+  const LS_PRODUCTS = 'ab_products';
+  const LS_BILLS = 'ab_bills';
+  const LS_LOWLIMIT = 'ab_low_limit';
+
+  let selectedPay = 'Cash';
+
+  function safeGet(key, fallback){
+    try{ const v = JSON.parse(localStorage.getItem(key)); return v === null || v === undefined ? fallback : v; }
+    catch(e){ return fallback; }
+  }
+  function safeSet(key, val){
+    try{ localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch(e){ return false; }
+  }
+
+  /* ---------- TABS ---------- */
+  function showTab(id){
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelector(`.tab-btn[data-tab="${id}"]`).classList.add('active');
+    if(id === 'productsTab') renderProducts();
+    if(id === 'historyTab') renderHistory();
+  }
+
+  /* ---------- SETTINGS ---------- */
+  function loadSettings(){
+    const s = safeGet(LS_SETTINGS, { shop:'ANANDA BHANDER', gstin:'', phone:'' });
+    document.getElementById('setShop').value = s.shop;
+    document.getElementById('setGstin').value = s.gstin;
+    document.getElementById('setPhone').value = s.phone;
+    return s;
+  }
+  function saveSettings(){
+    const s = {
+      shop: document.getElementById('setShop').value.trim() || 'ANANDA BHANDER',
+      gstin: document.getElementById('setGstin').value.trim(),
+      phone: document.getElementById('setPhone').value.trim()
+    };
+    safeSet(LS_SETTINGS, s);
+    toggleSettings();
+  }
+  function toggleSettings(){
+    const c = document.getElementById('settingsCard');
+    c.style.display = c.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function nextBillNo(){
+    let n = parseInt(safeGet(LS_BILLNO, 1), 10);
+    if(isNaN(n)) n = 1;
+    return n;
+  }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+  /* ---------- PAYMENT SELECTOR ---------- */
+  function selectPay(val){
+    selectedPay = val;
+    document.querySelectorAll('.pay-opt').forEach(el=>{
+      el.classList.toggle('selected', el.dataset.val === val);
+    });
+  }
+
+  /* ---------- PRODUCTS ---------- */
+  function getProducts(){ return safeGet(LS_PRODUCTS, []); }
+
+  /* ---------- STOCK HELPERS ---------- */
+  function roundQty(n){ return Math.round(n * 100) / 100; }
+  function isTracked(p){ return p && p.stock !== null && p.stock !== undefined && p.stock !== '' && !isNaN(parseFloat(p.stock)); }
+  function getLowLimit(){ const n = parseFloat(safeGet(LS_LOWLIMIT, 5)); return isNaN(n) ? 5 : n; }
+  function saveLowLimit(){
+    const v = parseFloat(document.getElementById('lowLimit').value);
+    safeSet(LS_LOWLIMIT, isNaN(v) ? 5 : v);
+    renderProducts();
+  }
+  function findProduct(list, name){
+    const n = (name || '').trim().toLowerCase();
+    return list.find(p => (p.name || '').trim().toLowerCase() === n);
+  }
+  function stockBadge(p){
+    if(!isTracked(p)) return '';
+    const st = parseFloat(p.stock);
+    if(st <= 0) return '<span class="tag due">Out of stock</span>';
+    if(st <= getLowLimit()) return '<span class="tag low">Low</span>';
+    return '<span class="tag ok">In stock</span>';
+  }
+  function updateStockHint(row){
+    const hint = row.querySelector('.stock-hint');
+    if(!hint) return;
+    const p = findProduct(getProducts(), row.querySelector('.item-name').value);
+    hint.className = 'stock-hint';
+    if(!isTracked(p)){ hint.textContent = ''; return; }
+    const st = parseFloat(p.stock);
+    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+    const u = p.unit ? ' ' + p.unit : '';
+    if(st <= 0){ hint.textContent = 'Out of stock'; hint.classList.add('warn'); }
+    else if(qty > st){ hint.textContent = 'Only ' + st + u + ' in stock!'; hint.classList.add('warn'); }
+    else { hint.textContent = 'Stock: ' + st + u; if(st <= getLowLimit()) hint.classList.add('low'); }
+  }
+  /* total qty per tracked product across the bill, compared with stock */
+  function stockShortages(items){
+    const products = getProducts();
+    const totals = {};
+    items.forEach(it=>{
+      const p = findProduct(products, it.name);
+      if(!isTracked(p)) return;
+      totals[p.id] = (totals[p.id] || 0) + (parseFloat(it.qty) || 0);
+    });
+    const msgs = [];
+    Object.keys(totals).forEach(id=>{
+      const p = products.find(x => String(x.id) === id);
+      if(totals[id] > parseFloat(p.stock)) msgs.push(`${p.name}: selling ${roundQty(totals[id])}, only ${parseFloat(p.stock)} in stock`);
+    });
+    return msgs;
+  }
+  /* subtract sold qty from stock; remember exactly what was taken so deleting the bill can restore it */
+  function applyStockForItems(items){
+    const products = getProducts();
+    let changed = false;
+    items.forEach(it=>{
+      const p = findProduct(products, it.name);
+      if(!isTracked(p)) return;
+      const qty = parseFloat(it.qty) || 0;
+      const used = Math.max(0, Math.min(qty, parseFloat(p.stock)));
+      p.stock = roundQty(parseFloat(p.stock) - used);
+      it.pid = p.id;
+      it.stockUsed = used;
+      changed = true;
+    });
+    if(changed) setProducts(products);
+  }
+  function restoreStockForBill(bill){
+    const products = getProducts();
+    let changed = false;
+    (bill.items || []).forEach(it=>{
+      if(!it.pid || !it.stockUsed) return;
+      const p = products.find(x => x.id === it.pid);
+      if(!isTracked(p)) return;
+      p.stock = roundQty(parseFloat(p.stock) + it.stockUsed);
+      changed = true;
+    });
+    if(changed) setProducts(products);
+  }
+  function setProducts(list){ safeSet(LS_PRODUCTS, list); refreshProductDatalist(); }
+
+  function addBatchRow(name='', unit='', rate='', stock=''){
+    const tbody = document.getElementById('batchRows');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="b-name" value="${name}" placeholder="Product name"></td>
+      <td class="unit"><input type="text" class="b-unit" value="${unit}" placeholder="kg / pcs"></td>
+      <td class="rate"><input type="number" class="b-rate" step="0.01" value="${rate}"></td>
+      <td class="rate"><input type="number" class="b-stock" step="0.01" value="${stock}" placeholder="optional"></td>
+      <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+  function saveBatch(){
+    const company = document.getElementById('batchCompany').value.trim();
+    if(!company){ alert('Enter the company name first'); return; }
+    const companyGstin = document.getElementById('batchCompanyGstin').value.trim();
+    const rows = document.querySelectorAll('#batchRows tr');
+    const list = getProducts();
+    let added = 0, merged = 0;
+    rows.forEach((r, i)=>{
+      const name = r.querySelector('.b-name').value.trim();
+      if(!name) return;
+      const unit = r.querySelector('.b-unit').value.trim();
+      const rate = parseFloat(r.querySelector('.b-rate').value) || 0;
+      const stockRaw = r.querySelector('.b-stock').value.trim();
+      const newStock = stockRaw === '' ? null : (parseFloat(stockRaw) || 0);
+
+      const existing = findProduct(list, name);
+      if(existing){
+        // Same product already saved: add the newly entered stock to it instead of making a duplicate row.
+        if(newStock !== null){
+          existing.stock = isTracked(existing) ? roundQty(parseFloat(existing.stock) + newStock) : newStock;
+        }
+        if(unit) existing.unit = unit;
+        if(rate) existing.rate = rate;
+        if(company) existing.company = company;
+        if(companyGstin) existing.companyGstin = companyGstin;
+        merged++;
+      } else {
+        list.push({ id: Date.now() + i, name, company, companyGstin, unit, rate, stock: newStock });
+        added++;
+      }
+    });
+    if(added === 0 && merged === 0){ alert('Add at least one product name before saving.'); return; }
+    setProducts(list);
+    renderProducts();
+    document.getElementById('batchCompany').value = '';
+    document.getElementById('batchCompanyGstin').value = '';
+    document.getElementById('batchRows').innerHTML = '';
+    addBatchRow(); addBatchRow(); addBatchRow();
+    if(merged > 0){
+      alert(`${added} new product(s) added, ${merged} existing product(s) topped up with the extra stock.`);
+    }
+  }
+  function deleteProduct(id){
+    if(!confirm('Delete this product?')) return;
+    setProducts(getProducts().filter(p=>p.id !== id));
+    renderProducts();
+  }
+  function updateProduct(id, field, value){
+    const list = getProducts();
+    const p = list.find(x=>x.id === id);
+    if(!p) return;
+    if(field === 'rate') p[field] = parseFloat(value) || 0;
+    else if(field === 'stock') p[field] = String(value).trim() === '' ? null : (parseFloat(value) || 0);
+    else p[field] = value;
+    setProducts(list);
+    if(field === 'stock'){
+      const b = document.getElementById('stkbadge-' + id);
+      if(b) b.innerHTML = stockBadge(p);
+    }
+  }
+  function clearProductSearch(){
+    document.getElementById('prodSearchName').value = '';
+    document.getElementById('prodSearchCompany').value = '';
+    document.getElementById('prodStockFilter').value = 'all';
+    renderProducts();
+  }
+  function renderProducts(){
+    const list = getProducts();
+    document.getElementById('lowLimit').value = getLowLimit();
+
+    const searchName = (document.getElementById('prodSearchName').value || '').trim().toLowerCase();
+    const searchCompany = (document.getElementById('prodSearchCompany').value || '').trim().toLowerCase();
+    const stockFilter = document.getElementById('prodStockFilter').value;
+
+    const filtered = list.filter(p=>{
+      if(searchName && !(p.name || '').toLowerCase().includes(searchName)) return false;
+      if(searchCompany && !(p.company || '').toLowerCase().includes(searchCompany)) return false;
+      if(stockFilter !== 'all'){
+        if(!isTracked(p)) return false;
+        const st = parseFloat(p.stock);
+        if(stockFilter === 'out' && st > 0) return false;
+        if(stockFilter === 'low' && (st > getLowLimit() || st <= 0)) return false;
+        if(stockFilter === 'ok' && st <= getLowLimit()) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('productRows');
+    tbody.innerHTML = '';
+    document.getElementById('noProducts').style.display = list.length ? 'none' : 'block';
+    const isSearching = !!(searchName || searchCompany || stockFilter !== 'all');
+    document.getElementById('noProductMatch').style.display = (list.length && isSearching && filtered.length === 0) ? 'block' : 'none';
+    filtered.forEach(p=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" value="${p.name}" onchange="updateProduct(${p.id},'name',this.value)"></td>
+        <td><input type="text" value="${(p.company || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="-" onchange="updateProduct(${p.id},'company',this.value)"></td>
+        <td><input type="text" value="${(p.companyGstin || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="-" onchange="updateProduct(${p.id},'companyGstin',this.value)"></td>
+        <td><input type="text" value="${p.unit}" onchange="updateProduct(${p.id},'unit',this.value)"></td>
+        <td><input type="number" step="0.01" value="${p.rate}" onchange="updateProduct(${p.id},'rate',this.value)"></td>
+        <td><input type="number" step="0.01" value="${isTracked(p) ? p.stock : ''}" placeholder="-" onchange="updateProduct(${p.id},'stock',this.value)"></td>
+        <td id="stkbadge-${p.id}">${stockBadge(p)}</td>
+        <td><button class="del-btn" onclick="deleteProduct(${p.id})">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  function refreshProductDatalist(){
+    const dl = document.getElementById('productDatalist');
+    dl.innerHTML = getProducts().map(p=>`<option value="${p.name}">`).join('');
+  }
+  function tryAutofillFromProduct(row){
+    const nameInput = row.querySelector('.item-name');
+    const match = getProducts().find(p=>p.name.toLowerCase() === nameInput.value.trim().toLowerCase());
+    if(match){
+      const unitInput = row.querySelector('.item-unit');
+      const rateInput = row.querySelector('.item-rate');
+      if(!unitInput.value) unitInput.value = match.unit;
+      if(!rateInput.value || parseFloat(rateInput.value) === 0) rateInput.value = match.rate;
+      calcTotals();
+    }
+  }
+
+  /* ---------- BILL ITEM ROWS ---------- */
+  function addRow(item='', qty='', unit='', rate=''){
+    const tbody = document.getElementById('itemRows');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="item-name" list="productDatalist" value="${item}" placeholder="Item name" oninput="calcRowHelpers(this)"><div class="stock-hint"></div></td>
+      <td class="qty"><input type="number" class="item-qty" value="${qty}" step="0.01" oninput="calcTotals()"></td>
+      <td class="unit"><input type="text" class="item-unit" value="${unit}" placeholder="kg / pcs"></td>
+      <td class="rate"><input type="number" class="item-rate" value="${rate}" step="0.01" oninput="calcTotals()"></td>
+      <td class="amt"><input type="text" class="item-amt" readonly value="0.00"></td>
+      <td><button class="del-btn" onclick="delRow(this)">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+  function calcRowHelpers(nameInput){
+    tryAutofillFromProduct(nameInput.closest('tr'));
+    updateStockHint(nameInput.closest('tr'));
+  }
+  function delRow(btn){ btn.closest('tr').remove(); calcTotals(); }
+
+  function calcTotals(){
+    const rows = document.querySelectorAll('#itemRows tr');
+    let subtotal = 0;
+    rows.forEach(r=>{
+      const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
+      const rate = parseFloat(r.querySelector('.item-rate').value) || 0;
+      const amt = qty * rate;
+      r.querySelector('.item-amt').value = amt.toFixed(2);
+      subtotal += amt;
+      updateStockHint(r);
+    });
+    const gst = parseFloat(document.getElementById('gst').value) || 0;
+    document.getElementById('subtotal').value = subtotal.toFixed(2);
+    document.getElementById('total').value = (subtotal + gst).toFixed(2);
+  }
+
+  function newBill(){
+    document.getElementById('itemRows').innerHTML = '';
+    addRow(); addRow(); addRow();
+    document.getElementById('gst').value = 0;
+    calcTotals();
+    document.getElementById('billDate').value = todayISO();
+    document.getElementById('billNo').value = nextBillNo();
+    document.getElementById('custName').value = '';
+    document.getElementById('custAddress').value = '';
+    selectPay('Cash');
+  }
+
+  /* ---------- BILL HISTORY STORAGE ---------- */
+  function getBills(){ return safeGet(LS_BILLS, []); }
+  function setBills(list){ safeSet(LS_BILLS, list); }
+
+  function saveBillRecord(items, subtotal, gst, total){
+    const bill = {
+      billNo: document.getElementById('billNo').value || '-',
+      date: document.getElementById('billDate').value || todayISO(),
+      custName: document.getElementById('custName').value.trim(),
+      custAddress: document.getElementById('custAddress').value.trim(),
+      items, subtotal, gst, total,
+      payment: selectedPay,
+      status: selectedPay === 'Credit' ? 'Due' : 'Paid',
+      paidDate: selectedPay === 'Credit' ? '' : todayISO()
+    };
+    const list = getBills();
+    list.push(bill);
+    setBills(list);
+  }
+
+  function markPaid(index, method){
+    const list = getBills();
+    if(!list[index]) return;
+    list[index].status = 'Paid';
+    list[index].payment = method;
+    list[index].paidDate = todayISO();
+    setBills(list);
+    renderHistory();
+  }
+
+  function deleteBill(index){
+    const list = getBills();
+    const b = list[index];
+    if(!b) return;
+    if(!confirm(`Delete Bill No ${b.billNo}? Any tracked stock from this bill will be added back.`)) return;
+    restoreStockForBill(b);
+    list.splice(index, 1);
+    setBills(list);
+    renderHistory();
+  }
+
+  function clearHistFilters(){
+    document.getElementById('histSearch').value = '';
+    document.getElementById('histFrom').value = '';
+    document.getElementById('histTo').value = '';
+    renderHistory();
+  }
+
+  function getFilteredBills(){
+    const list = getBills();
+    const search = (document.getElementById('histSearch').value || '').trim().toLowerCase();
+    const fromDate = document.getElementById('histFrom').value;
+    const toDate = document.getElementById('histTo').value;
+    return list
+      .map((b,i)=>({...b, _idx:i}))
+      .filter(b => !search || (b.custName || '').toLowerCase().includes(search))
+      .filter(b => !fromDate || (b.date && b.date >= fromDate))
+      .filter(b => !toDate || (b.date && b.date <= toDate))
+      .reverse();
+  }
+
+  function renderHistory(){
+    const list = getBills();
+    const filtered = getFilteredBills();
+
+    const tbody = document.getElementById('historyRows');
+    tbody.innerHTML = '';
+    document.getElementById('noHistory').style.display = filtered.length ? 'none' : 'block';
+
+    const isFiltered = !!(document.getElementById('histSearch').value.trim() || document.getElementById('histFrom').value || document.getElementById('histTo').value);
+    const summaryEl = document.getElementById('histFilterSummary');
+    if(isFiltered){
+      let fSales = 0, fDue = 0;
+      filtered.forEach(b=>{
+        fSales += (parseFloat(b.total) || 0);
+        if(b.status === 'Due') fDue += (parseFloat(b.total) || 0);
+      });
+      summaryEl.textContent = `Showing ${filtered.length} bill(s) — Sales: ₹${fSales.toFixed(2)}, Due: ₹${fDue.toFixed(2)}`;
+    } else {
+      summaryEl.textContent = '';
+    }
+
+    let totalSales = 0, totalDue = 0;
+    list.forEach(b=>{
+      totalSales += (parseFloat(b.total) || 0);
+      if(b.status === 'Due') totalDue += (parseFloat(b.total) || 0);
+    });
+    document.getElementById('sumCount').textContent = list.length;
+    document.getElementById('sumSales').textContent = '₹' + totalSales.toFixed(2);
+    document.getElementById('sumDue').textContent = '₹' + totalDue.toFixed(2);
+
+    filtered.forEach(b=>{
+      const tr = document.createElement('tr');
+      const statusTag = b.status === 'Due'
+        ? `<span class="tag due">Due</span>`
+        : `<span class="tag paid">Paid</span>`;
+      const actionCell = b.status === 'Due'
+        ? `<button class="tiny pay-btn" onclick="markPaid(${b._idx},'Cash')">Mark Paid (Cash)</button>
+           <button class="tiny pay-btn" onclick="markPaid(${b._idx},'GPay')">Mark Paid (GPay)</button>`
+        : (b.paidDate ? `<span class="sub" style="font-size:11px;">on ${b.paidDate}</span>` : '');
+      const delCell = `<button class="del-btn" title="Delete bill (stock is added back)" onclick="deleteBill(${b._idx})">✕</button>`;
+      tr.innerHTML = `
+        <td>${b.billNo}</td>
+        <td>${b.date}</td>
+        <td>${b.custName || '-'}</td>
+        <td>₹${(parseFloat(b.total)||0).toFixed(2)}</td>
+        <td>${b.payment}</td>
+        <td>${statusTag}</td>
+        <td>${actionCell} ${delCell}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* ---------- BACKUP ---------- */
+  function exportData(){
+    const data = {
+      settings: safeGet(LS_SETTINGS, {}),
+      products: getProducts(),
+      bills: getBills(),
+      nextBillNo: nextBillNo(),
+      lowLimit: getLowLimit(),
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ananda-bhandar-backup-${todayISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  function importData(evt){
+    const file = evt.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        const data = JSON.parse(e.target.result);
+        if(!confirm('This will REPLACE current products, bills and settings on this computer with the backup file. Continue?')) return;
+        if(data.settings) safeSet(LS_SETTINGS, data.settings);
+        if(data.products) safeSet(LS_PRODUCTS, data.products);
+        if(data.bills) safeSet(LS_BILLS, data.bills);
+        if(data.nextBillNo) safeSet(LS_BILLNO, data.nextBillNo);
+        if(data.lowLimit !== undefined) safeSet(LS_LOWLIMIT, data.lowLimit);
+        alert('Backup restored.');
+        loadSettings(); refreshProductDatalist(); renderProducts(); renderHistory(); newBill();
+      }catch(err){
+        alert('Could not read this file. Make sure it is a backup exported from this tool.');
+      }
+    };
+    reader.readAsText(file);
+    evt.target.value = '';
+  }
+
+  /* ---------- PRINT ---------- */
+  function printBill(){
+    const rows = document.querySelectorAll('#itemRows tr');
+    const items = [];
+    rows.forEach(r=>{
+      const name = r.querySelector('.item-name').value.trim();
+      if(!name) return;
+      items.push({
+        name,
+        qty: r.querySelector('.item-qty').value,
+        unit: r.querySelector('.item-unit').value.trim(),
+        rate: r.querySelector('.item-rate').value,
+        amt: r.querySelector('.item-amt').value
+      });
+    });
+    if(items.length === 0){ alert('Add at least one item before printing.'); return; }
+
+    const curNo = document.getElementById('billNo').value || '-';
+    const alreadySaved = getBills().some(b => String(b.billNo) === String(curNo));
+    if(alreadySaved){
+      if(!confirm(`Bill No ${curNo} is already saved. Print another copy only? (Stock will NOT change again.) Press Cancel and click "New bill" for a new customer.`)) return;
+    } else {
+      const short = stockShortages(items);
+      if(short.length && !confirm('Not enough stock:\n\n' + short.join('\n') + '\n\nPrint anyway? (Stock will go down to 0.)')) return;
+    }
+
+    const s = loadSettings();
+    document.getElementById('pbShop').textContent = s.shop;
+    document.getElementById('pbMeta').textContent = `GSTIN: ${s.gstin || '-'}  |  Ph: ${s.phone || '-'}`;
+    document.getElementById('pbBillNo').textContent = 'Bill No: ' + (document.getElementById('billNo').value || '-');
+    document.getElementById('pbDate').textContent = 'Date: ' + (document.getElementById('billDate').value || '-');
+
+    const custName = document.getElementById('custName').value.trim();
+    const custAddress = document.getElementById('custAddress').value.trim();
+    document.getElementById('pbCustName').textContent = custName ? ('Name: ' + custName) : '';
+    document.getElementById('pbCustAddress').textContent = custAddress ? ('Addr: ' + custAddress) : '';
+    document.getElementById('pbCustRow').style.display = (custName || custAddress) ? 'flex' : 'none';
+
+    const pbItems = document.getElementById('pbItems');
+    pbItems.innerHTML = '';
+    items.forEach(it=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${it.name}</td><td class="r">${it.qty}</td><td class="r">${it.unit}</td><td class="r">${it.rate}</td><td class="r">${it.amt}</td>`;
+      pbItems.appendChild(tr);
+    });
+
+    const subtotal = document.getElementById('subtotal').value;
+    const gst = parseFloat(document.getElementById('gst').value || 0).toFixed(2);
+    const total = document.getElementById('total').value;
+    document.getElementById('pbSubtotal').textContent = subtotal;
+    document.getElementById('pbGst').textContent = gst;
+    document.getElementById('pbTotal').textContent = total;
+    document.getElementById('pbPay').textContent = selectedPay + (selectedPay === 'Credit' ? ' (Due)' : '');
+
+    if(!alreadySaved){
+      applyStockForItems(items);
+      saveBillRecord(items, subtotal, gst, total);
+    }
+
+    window.print();
+
+    if(!alreadySaved){
+      const current = parseInt(document.getElementById('billNo').value, 10);
+      if(!isNaN(current)) safeSet(LS_BILLNO, current + 1);
+    }
+  }
+
+  /* ---------- PRINTABLE REPORT ---------- */
+  function printReport(){
+    const bills = getFilteredBills();
+    if(bills.length === 0){ alert('No bills match the current search/date filter to report on.'); return; }
+    const s = loadSettings();
+
+    let totalSales = 0, totalDue = 0;
+    const rowsHtml = bills.map(b=>{
+      const amt = parseFloat(b.total) || 0;
+      totalSales += amt;
+      if(b.status === 'Due') totalDue += amt;
+      const itemsHtml = (b.items || []).map(it =>
+        `${it.name} — ${it.qty}${it.unit || ''} x ₹${it.rate} = ₹${it.amt}`
+      ).join('<br>');
+      const payLabel = b.status === 'Due' ? 'Credit (Due)' : b.payment;
+      return `<tr>
+        <td>${b.billNo}</td>
+        <td>${b.date}</td>
+        <td>${b.custName || '-'}</td>
+        <td>${payLabel}</td>
+        <td style="text-align:left;">${itemsHtml}</td>
+        <td style="text-align:right; font-weight:bold;">₹${amt.toFixed(2)}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Purchase Report</title>
+    <style>
+      body{ font-family:Arial, sans-serif; padding:24px; color:#222; }
+      h1{ margin:0 0 2px; font-size:20px; color:#2f4f3f; }
+      .meta{ font-size:12px; color:#666; margin-bottom:14px; }
+      table{ width:100%; border-collapse:collapse; font-size:12px; }
+      th,td{ border:1px solid #999; padding:6px 8px; vertical-align:top; }
+      th{ background:#2f4f3f; color:#fff; text-align:left; }
+      .totals{ margin-top:16px; font-size:14px; }
+      .totals div{ margin-bottom:4px; }
+      .due{ color:#a1453a; font-weight:bold; }
+      .sales{ color:#2f4f3f; font-weight:bold; }
+    </style></head>
+    <body>
+      <h1>${s.shop || 'Shop'}</h1>
+      <div class="meta">GSTIN: ${s.gstin || '-'} &nbsp;|&nbsp; Phone: ${s.phone || '-'} &nbsp;|&nbsp; Report generated: ${todayISO()}</div>
+      <table>
+        <thead><tr><th>Bill No</th><th>Date</th><th>Customer</th><th>Payment</th><th>Items Purchased</th><th>Amount</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div class="totals">
+        <div><b>Total bills:</b> ${bills.length}</div>
+        <div class="sales"><b>Total sales:</b> ₹${totalSales.toFixed(2)}</div>
+        <div class="due"><b>Total outstanding credit (due):</b> ₹${totalDue.toFixed(2)}</div>
+      </div>
+      <script>window.onload = function(){ window.print(); };<\/script>
+    </body></html>`;
+
+    const w = window.open('', '_blank');
+    if(!w){ alert('Please allow pop-ups for this page to see the report.'); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
+
+  /* ---------- CALCULATOR ---------- */
+  let calcCur = '0';
+  let calcPrev = null;
+  let calcOpVal = null;
+  let calcResetNext = false;
+
+  function openCalc(){
+    document.getElementById('calcOverlay').classList.add('open');
+    updateCalcDisplay();
+  }
+  function closeCalc(){
+    document.getElementById('calcOverlay').classList.remove('open');
+  }
+  function isCalcOpen(){
+    return document.getElementById('calcOverlay').classList.contains('open');
+  }
+  function updateCalcDisplay(){
+    document.getElementById('calcDisplay').value = calcCur;
+  }
+  function calcNum(n){
+    if(calcResetNext){ calcCur = '0'; calcResetNext = false; }
+    if(n === '.' && calcCur.includes('.')) return;
+    calcCur = (calcCur === '0' && n !== '.') ? n : calcCur + n;
+    updateCalcDisplay();
+  }
+  function calcOp(op){
+    if(calcCur === 'Error') return;
+    if(calcOpVal !== null && !calcResetNext) calcEquals();
+    calcPrev = parseFloat(calcCur);
+    calcOpVal = op;
+    calcResetNext = true;
+  }
+  function calcEquals(){
+    if(calcOpVal === null || calcPrev === null) return;
+    const cur = parseFloat(calcCur);
+    let result = cur;
+    switch(calcOpVal){
+      case '+': result = calcPrev + cur; break;
+      case '-': result = calcPrev - cur; break;
+      case '*': result = calcPrev * cur; break;
+      case '/': result = cur === 0 ? NaN : calcPrev / cur; break;
+    }
+    calcCur = isNaN(result) ? 'Error' : String(Math.round(result * 100000) / 100000);
+    calcOpVal = null;
+    calcPrev = null;
+    calcResetNext = true;
+    updateCalcDisplay();
+  }
+  function calcClear(){
+    calcCur = '0'; calcPrev = null; calcOpVal = null; calcResetNext = false;
+    updateCalcDisplay();
+  }
+  function calcBackspace(){
+    if(calcCur.length <= 1 || calcCur === 'Error'){ calcCur = '0'; }
+    else calcCur = calcCur.slice(0, -1);
+    updateCalcDisplay();
+  }
+  function calcPercent(){
+    if(calcCur === 'Error') return;
+    calcCur = String(parseFloat(calcCur) / 100);
+    updateCalcDisplay();
+  }
+
+  document.addEventListener('keydown', function(e){
+    // F2 toggles the calculator from anywhere, even while typing in a bill field
+    if(e.key === 'F2'){
+      e.preventDefault();
+      isCalcOpen() ? closeCalc() : openCalc();
+      return;
+    }
+    if(!isCalcOpen()) return;
+
+    if(e.key >= '0' && e.key <= '9'){ calcNum(e.key); e.preventDefault(); }
+    else if(e.key === '.'){ calcNum('.'); e.preventDefault(); }
+    else if(e.key === '+'){ calcOp('+'); e.preventDefault(); }
+    else if(e.key === '-'){ calcOp('-'); e.preventDefault(); }
+    else if(e.key === '*'){ calcOp('*'); e.preventDefault(); }
+    else if(e.key === '/'){ calcOp('/'); e.preventDefault(); }
+    else if(e.key === 'Enter' || e.key === '='){ calcEquals(); e.preventDefault(); }
+    else if(e.key === 'Backspace'){ calcBackspace(); e.preventDefault(); }
+    else if(e.key === 'Escape'){ closeCalc(); e.preventDefault(); }
+    else if(e.key === '%'){ calcPercent(); e.preventDefault(); }
+  });
+
+  /* ---------- INIT ---------- */
+  loadSettings();
+  refreshProductDatalist();
+  newBill();
+  addBatchRow(); addBatchRow(); addBatchRow();
+</script>
+</body>
+</html>
